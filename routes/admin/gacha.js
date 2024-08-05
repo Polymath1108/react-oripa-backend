@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Gacha = require("../../model/gacha");
 const auth = require("../../middleware/auth");
-const uploadGacha = require("../../multer/gacha_multer");
+const uploadGacha = require("../../utils/multer/gacha_multer");
 
 router.post("/add", uploadGacha.single("file"), async (req, res) => {
   const { name, price, totalNum, category } = req.body;

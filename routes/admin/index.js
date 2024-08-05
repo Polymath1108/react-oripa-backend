@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../../multer");
+const uploadPrize = require("../../utils/multer/prize_multer");
 
 const auth = require("../../middleware/auth");
 const adminSchemas = require("../../model/admin");
@@ -51,33 +51,29 @@ router.delete("/del_category/:id", auth, async (req, res) => {
 });
 
 /* Prize Management */
-router.post(
-  "/prize_upload",
-  upload.uploadPrize.single("file"),
-  async (req, res) => {
-    const { name, rarity, cashBack } = req.body;
-    console.log("req.file", req.file);
-    const newPrize = new adminSchemas.Prize({
-      name: name,
-      rarity: rarity,
-      cashback: cashBack,
-      img_url: `/uploads/prize/${req.file.filename}`,
+router.post("/prize_upload", uploadPrize.single("file"), async (req, res) => {
+  const { name, rarity, cashBack } = req.body;
+  console.log("req.file", req.file);
+  const newPrize = new adminSchemas.Prize({
+    name: name,
+    rarity: rarity,
+    cashback: cashBack,
+    img_url: `/uploads/prize/${req.file.filename}`,
+  });
+  const saved = await newPrize.save();
+  if (saved) {
+    res.send({
+      status: 1,
+      msg: "New prize added",
     });
-    const saved = await newPrize.save();
-    if (saved) {
-      res.send({
-        status: 1,
-        msg: "New prize added",
-      });
-    } else {
-      res.send({
-        status: 0,
-        msg: "Prize save failed.",
-      });
-    }
-    // res.send({ filePath: `/uploads/${req.file.filename}` });
+  } else {
+    res.send({
+      status: 0,
+      msg: "Prize save failed.",
+    });
   }
-);
+  // res.send({ filePath: `/uploads/${req.file.filename}` });
+});
 router.get("/get_prize", auth, async (req, res) => {
   const prize = await adminSchemas.Prize.find();
   if (prize) {

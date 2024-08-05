@@ -1,0 +1,29 @@
+{
+  "name": "asdf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anderson3197/FullStackAuth.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Anderson3197/FullStackAuth/issues"
+  },
+  "homepage": "https://github.com/Anderson3197/FullStackAuth#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.1.3",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.6",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.2.2"
+  }
+}

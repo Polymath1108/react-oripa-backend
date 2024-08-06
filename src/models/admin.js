@@ -12,11 +12,19 @@ const prizeSchema = new Schema({
   img_url: { type: String },
 });
 
+const pointSchema = new Schema({
+  point_num: { type: Number },
+  price: { type: Number },
+  img_url: { type: String },
+});
+
 const Category = mongoose.model("Category", categorySchema, "admin_category");
 const Prize = mongoose.model("Prize", prizeSchema, "admin_prize");
+const Point = mongoose.model("model", pointSchema, "admin_point");
 const adminSchemas = {
   Category: Category,
   Prize: Prize,
+  Point: Point,
 };
 
 module.exports = adminSchemas;

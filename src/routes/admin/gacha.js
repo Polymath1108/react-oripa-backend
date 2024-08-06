@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Gacha = require("../../model/gacha");
+const Gacha = require("../../models/gacha");
 const auth = require("../../middleware/auth");
 const uploadGacha = require("../../utils/multer/gacha_multer");
 

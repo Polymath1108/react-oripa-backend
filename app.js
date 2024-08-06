@@ -1,14 +1,14 @@
 const express = require("express");
-const dbConnect = require("./config/db/dbConnect");
+const dbConnect = require("./src/config/db/dbConnect");
 const cors = require("cors");
 const path = require("path");
 
 const app = express();
 const port = process.env.PORT || 5000;
 const bodyParser = require("body-parser");
-const admin = require("./router/admin");
-const user = require("./router/user");
-const gacha = require("./router/admin/gacha");
+const admin = require("./src/routes/admin");
+const user = require("./src/routes/user");
+const gacha = require("./src/routes/admin/gacha");
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   ``;
@@ -34,12 +34,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Serve the uploads folder statically
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/uploads/gacha_thumnail",
+  express.static(path.join(__dirname, "uploads/gacha_thumnail"))
+);
+app.use(
+  "/uploads/prize",
+  express.static(path.join(__dirname, "uploads/prize"))
+);
 app.use("/template", express.static(path.join(__dirname, "template")));
-// app.use(
-//   "/uploads",
-//   express.static(path.join(__dirname, "uploads/gacha_thumnail"))
-// );
+app.use(
+  "/uploads/point",
+  express.static(path.join(__dirname, "uploads/point"))
+);
 
 //router for admin business
 app.use("/admin", admin);

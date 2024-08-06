@@ -7,6 +7,7 @@ const gachaSchema = new mongoose.Schema({
   category: { type: String },
   prize: { type: Array },
   gacha_thumnail_url: { type: String },
+  isRelease: { type: Boolean },
   create_date: { type: Date },
 });
 

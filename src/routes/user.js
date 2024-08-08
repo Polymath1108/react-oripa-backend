@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/user");
+const Users = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const auth = require("../middleware/auth");
 
 router.post("/register", (req, res) => {
+  console.log("user data", req.body);
   bcrypt
     .hash(req.body.password, 10)
     .then((hashedPassword) => {
-      const user = new User({
+      const user = new Users({
         name: req.body.name,
         email: req.body.email,
         password: hashedPassword,
@@ -16,12 +18,14 @@ router.post("/register", (req, res) => {
       user
         .save()
         .then((result) => {
-          res.status(201).send({
-            message: "User Created Successfully",
+          res.send({
+            status: 1,
+            msg: "User Created Successfully",
             result,
           });
         })
         .catch((error) => {
+          console.log(error);
           res.status(500).send({ message: "Error creating user", error });
         });
     })
@@ -39,6 +43,7 @@ router.post("/login", (req, res) => {
         name: "Admin",
         eamil: "admin@email.com",
       };
+      console.log("userData", req.body);
       const token = jwt.sign(userData, "RANDOM-TOKEN", { expiresIn: "1h" });
       return res.send({
         status: 1,
@@ -53,7 +58,7 @@ router.post("/login", (req, res) => {
       });
     }
   }
-  User.findOne({ email: req.body.email })
+  Users.findOne({ email: req.body.email })
     .then((user) => {
       bcrypt
         .compare(req.body.password, user.password)
@@ -91,6 +96,16 @@ router.post("/login", (req, res) => {
     .catch((e) => {
       res.send({ status: 0, message: "Email or Username not found", e });
     });
+});
+
+router.get("/get_user/:id", auth, (req, res) => {
+  const id = req.params.id;
+  console.log("user_id", id);
+  Users.findOne({ _id: id })
+    .then((user) => {
+      res.send({ status: 1, msg: "get User succeeded.", user: user });
+    })
+    .catch((err) => res.send({ status: 0, msg: "get User failed.", err: err }));
 });
 
 module.exports = router;

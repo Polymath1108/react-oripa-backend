@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const uploadPrize = require("../../utils/multer/prize_multer");
 const uploadPoint = require("../../utils/multer/point_multer");
-
+const path = require("path");
 const auth = require("../../middleware/auth");
 const adminSchemas = require("../../models/admin");
+const deleteFile = require("../../utils/delete");
 
 router.get("/admin_test", (req, res) => {
   res.send("amdin test is sucessful.");
@@ -119,22 +120,34 @@ router.get("/get_prize", auth, async (req, res) => {
 });
 router.delete("/del_prize/:id", auth, async (req, res) => {
   const id = req.params.id;
-  adminSchemas.Prize.deleteOne({ _id: id })
-    .then(() => {
-      res.send({ status: 1, msg: "Prize deleted!" });
+  adminSchemas.Prize.findOne({ _id: id })
+    .then(async (prize) => {
+      const filename = prize.img_url;
+      const filePath = path.join("./", filename);
+      console.log("filepath------->", filePath);
+      try {
+        await deleteFile(filePath);
+        prize.deleteOne();
+        res.send({ status: 1, msg: "prize deleted successfully." });
+      } catch (err) {
+        console.error("Error deleting file:", err);
+        res.status(500).send({ status: 0, msg: "Error deleting file" });
+      }
     })
-    .catch((err) => {
-      res.send({ status: 0, msg: "delete failed!", err: err });
-    });
+    .catch((err) =>
+      res.send({ status: 0, msg: "prize finding error", err: err })
+    );
 });
 
 /* Point management */
 //get all registered point
 router.get("/get_point", auth, async (req, res) => {
-  const points = await adminSchemas.Point.find().sort("point_num");
-  if (points) {
-    return res.send({ status: 1, points: points });
-  } else return res.send({ status: 0 });
+  adminSchemas.Point.find()
+    .sort("point_num")
+    .then(() => {
+      return res.send({ status: 1, points: points });
+    })
+    .catch((err) => res.send({ status: 0, err: err }));
 });
 
 //new point add with point image uploading
@@ -150,7 +163,6 @@ router.post(
     };
     if (req.file.filename != undefined)
       pointData.img_url = `/uploads/point/${req.file.filename}`;
-    console.log("req.file", req.file);
 
     if (id != "") {
       console.log("update id----->", id);
@@ -163,18 +175,20 @@ router.post(
         });
     } else {
       const newPoint = new adminSchemas.Point(pointData);
-      const saved = await newPoint.save();
-      if (saved) {
-        res.send({
-          status: 1,
-          msg: "New point added",
-        });
-      } else {
-        res.send({
-          status: 0,
-          msg: "point save failed.",
-        });
-      }
+      newPoint
+        .save()
+        .then(() => {
+          res.send({
+            status: 1,
+            msg: "New point added",
+          });
+        })
+        .catch((err) =>
+          res.send({
+            status: 0,
+            msg: "point save failed.",
+          })
+        );
     }
   }
 );
@@ -182,8 +196,49 @@ router.post(
 //delete point by id
 router.delete("/del_point/:id", auth, (req, res) => {
   const id = req.params.id;
-  adminSchemas.Point.deleteOne({ _id: id })
-    .then(() => res.send({ status: 1 }))
+  adminSchemas.Point.findOne({ _id: id })
+    .then(async (point) => {
+      const filePath = path.join("./", point.img_url);
+      try {
+        await deleteFile(filePath);
+      } catch (err) {
+        res.send({ status: 0, err: err });
+      }
+      point.deleteOne();
+      res.send({ status: 1 });
+    })
+    .catch((err) => res.send({ status: 0, err: err }));
+});
+
+/* administator management */
+router.get("/get_adminList", auth, (req, res) => {
+  adminSchemas.Administrator.find()
+    .then((admin) => res.send({ status: 1, adminList: admin }))
+    .catch((err) => res.send({ status: 0, err: err }));
+});
+
+router.post("/add_admin", auth, (req, res) => {
+  const { adminId, name, email, password } = req.body;
+  const admin_data = {
+    name: name,
+    email: email,
+    password: password,
+  };
+  if (adminId != "") {
+    adminSchemas.Administrator.updateOne({ _id: adminId }, admin_data)
+      .then(() => res.send({ status: 2 }))
+      .catch((err) => res.send({ status: 0, err: err }));
+  } else {
+    adminSchemas.Administrator.create(admin_data)
+      .then(() => res.send({ status: 1 }))
+      .catch((err) => res.send({ status: 0, err: err }));
+  }
+});
+
+router.delete("/del_admin/:id", auth, (req, res) => {
+  const id = req.params.id;
+  adminSchemas.Administrator.deleteOne({ _id: id })
+    .then((res) => res.send({ status: 1 }))
     .catch((err) => res.send({ status: 0, err: err }));
 });
 module.exports = router;

@@ -9,6 +9,7 @@ const bodyParser = require("body-parser");
 const admin = require("./src/routes/admin");
 const user = require("./src/routes/user");
 const gacha = require("./src/routes/admin/gacha");
+const point = require("./src/routes/user/point");
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   ``;
@@ -53,6 +54,7 @@ app.use("/admin", admin);
 app.use("/admin/gacha", gacha);
 //router for user task
 app.use("/user", user);
+app.use("/user/point", point);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

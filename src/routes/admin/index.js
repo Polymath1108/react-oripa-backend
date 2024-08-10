@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 const uploadPrize = require("../../utils/multer/prize_multer");
 const uploadPoint = require("../../utils/multer/point_multer");
 const path = require("path");
@@ -122,6 +123,8 @@ router.delete("/del_prize/:id", auth, async (req, res) => {
   const id = req.params.id;
   adminSchemas.Prize.findOne({ _id: id })
     .then(async (prize) => {
+      // if (prize.status == "set")
+      //   return res.send({ status: 0, msg: "Can't delete set prize" });
       const filename = prize.img_url;
       const filePath = path.join("./", filename);
       console.log("filepath------->", filePath);
@@ -144,13 +147,13 @@ router.delete("/del_prize/:id", auth, async (req, res) => {
 router.get("/get_point", auth, async (req, res) => {
   adminSchemas.Point.find()
     .sort("point_num")
-    .then(() => {
+    .then((points) => {
       return res.send({ status: 1, points: points });
     })
     .catch((err) => res.send({ status: 0, err: err }));
 });
 
-//new point add with point image uploading
+//new point add or update point with point image uploading
 router.post(
   "/point_upload",
   auth,
@@ -161,17 +164,25 @@ router.post(
       point_num: pointNum,
       price: price,
     };
-    if (req.file.filename != undefined)
+    if (req.file?.filename != undefined)
       pointData.img_url = `/uploads/point/${req.file.filename}`;
 
     if (id != "") {
       console.log("update id----->", id);
-      adminSchemas.Point.updateOne({ _id: id }, pointData)
-        .then((res) => {
-          return res.send({ status: 1, msg: "Updated successfully." });
+      adminSchemas.Point.findOne({ _id: id })
+        .then(async (point) => {
+          try {
+            const filePath = path.join("./", point.img_url);
+            await deleteFile(filePath);
+          } catch (err) {
+            console.log("point image file deleting error", err);
+          }
+          adminSchemas.Point.updateOne({ _id: id }, pointData)
+            .then(() => res.send({ status: 2 }))
+            .catch((err) => res.send({ status: 0, err: err }));
         })
         .catch((err) => {
-          return res.send({ status: 0, msg: "Update failed", err: err });
+          return res.send({ status: 0, err: err });
         });
     } else {
       const newPoint = new adminSchemas.Point(pointData);
@@ -180,20 +191,19 @@ router.post(
         .then(() => {
           res.send({
             status: 1,
-            msg: "New point added",
           });
         })
         .catch((err) =>
           res.send({
             status: 0,
-            msg: "point save failed.",
+            err: err,
           })
         );
     }
   }
 );
 
-//delete point by id
+//delete point with image deleting by id
 router.delete("/del_point/:id", auth, (req, res) => {
   const id = req.params.id;
   adminSchemas.Point.findOne({ _id: id })
@@ -202,10 +212,14 @@ router.delete("/del_point/:id", auth, (req, res) => {
       try {
         await deleteFile(filePath);
       } catch (err) {
-        res.send({ status: 0, err: err });
+        console.log("point iamge deleting error", err);
       }
-      point.deleteOne();
-      res.send({ status: 1 });
+      point
+        .deleteOne()
+        .then(() => {
+          return res.send({ status: 1 });
+        })
+        .catch((err) => res.send({ status: 0, err: err }));
     })
     .catch((err) => res.send({ status: 0, err: err }));
 });
@@ -219,18 +233,29 @@ router.get("/get_adminList", auth, (req, res) => {
 
 router.post("/add_admin", auth, (req, res) => {
   const { adminId, name, email, password } = req.body;
+  if (
+    name == (undefined || "") ||
+    email == (undefined || "") ||
+    password == (undefined || "")
+  )
+    res.send({ status: 0, msg: "invalid input data." });
+  console.log("req.body", req.body);
   const admin_data = {
     name: name,
     email: email,
     password: password,
   };
-  if (adminId != "") {
-    adminSchemas.Administrator.updateOne({ _id: adminId }, admin_data)
-      .then(() => res.send({ status: 2 }))
+
+  if (adminId == undefined || adminId == "") {
+    const newAdmin = new adminSchemas.Administrator(admin_data);
+    newAdmin
+      .save()
+      .then(() => res.send({ status: 1 }))
       .catch((err) => res.send({ status: 0, err: err }));
   } else {
-    adminSchemas.Administrator.create(admin_data)
-      .then(() => res.send({ status: 1 }))
+    console.log("admin update");
+    adminSchemas.Administrator.updateOne({ _id: adminId }, admin_data)
+      .then(() => res.send({ status: 2 }))
       .catch((err) => res.send({ status: 0, err: err }));
   }
 });
@@ -238,7 +263,7 @@ router.post("/add_admin", auth, (req, res) => {
 router.delete("/del_admin/:id", auth, (req, res) => {
   const id = req.params.id;
   adminSchemas.Administrator.deleteOne({ _id: id })
-    .then((res) => res.send({ status: 1 }))
+    .then(() => res.send({ status: 1 }))
     .catch((err) => res.send({ status: 0, err: err }));
 });
 module.exports = router;

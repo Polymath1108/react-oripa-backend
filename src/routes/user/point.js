@@ -24,7 +24,9 @@ router.post("/purchase", auth, async (req, res) => {
         .then((data) => {
           console.log("newpointlog save res", data);
           //   user.remain = data.point_num;
-          user.point_remain += point_num;
+          user.point_remain = user.point_remain
+            ? user.point_remain + point_num
+            : point_num;
           user
             .save()
             // .updateOne({ _id: user_id }, { point_remain: point_num })

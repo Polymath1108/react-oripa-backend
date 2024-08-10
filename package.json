@@ -6,16 +6,8 @@
   "scripts": {
     "start": "node app.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Anderson3197/FullStackAuth.git"
-  },
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Anderson3197/FullStackAuth/issues"
-  },
-  "homepage": "https://github.com/Anderson3197/FullStackAuth#readme",
   "dependencies": {
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",

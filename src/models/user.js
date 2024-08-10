@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  name: { type: String },
-  email: { type: String },
-  password: { type: String },
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  password: { type: String, required: true },
   firstname: { type: String },
   lastname: { type: String },
   address: { type: String },
@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
   postalCode: { type: Number },
   description: { type: String },
   point_remain: { type: Number },
+  obtain_cards: { type: Array },
 });
 
 const Users = mongoose.model("Users", UserSchema, "users");

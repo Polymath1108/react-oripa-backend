@@ -10,21 +10,19 @@ const admin = require("./src/routes/admin");
 const user = require("./src/routes/user");
 const gacha = require("./src/routes/admin/gacha");
 const point = require("./src/routes/user/point");
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  ``;
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  next();
-});
-
-app.use(bodyParser.json());
+// app.use((req, res, next) => {
+//   res.setHeader("Access-Control-Allow-Origin", "*");
+//   ``;
+//   res.setHeader(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
+//   );
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+//   );
+//   next();
+// });
 
 const corsOptions = {
   origin: "*",
@@ -33,6 +31,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(bodyParser.json());
 
 // Serve the uploads folder statically
 app.use(

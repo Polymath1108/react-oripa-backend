@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
-const { Point } = require("./admin");
 
 const pointLogSchema = new mongoose.Schema({
-  user_id: { type: String },
-  point_num: { type: Number },
-  date: { type: Date },
+  user_id: { type: String, required: true },
+  point_num: { type: Number, required: true },
+  date: { type: Date, default: Date.now },
   usage: { type: String },
 });
 

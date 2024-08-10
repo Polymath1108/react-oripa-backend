@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const Users = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
+const Users = require("../models/user");
+const adminSchemas = require("../models/admin");
 
 router.post("/register", (req, res) => {
   console.log("user data", req.body);
@@ -36,66 +37,65 @@ router.post("/register", (req, res) => {
     });
 });
 
-router.post("/login", (req, res) => {
-  if (req.body.email === "admin@email.com") {
-    if (req.body.password === "oripa_admin") {
-      const userData = {
-        name: "Admin",
-        eamil: "admin@email.com",
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  var payload;
+  const admin = await adminSchemas.Administrator.findOne({ email: email });
+  if (admin) {
+    console.log("admin", admin);
+    if (password == admin.password) {
+      payload = {
+        user_id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: "admin",
       };
-      console.log("userData", req.body);
-      const token = jwt.sign(userData, "RANDOM-TOKEN", { expiresIn: "1h" });
-      return res.send({
+      const token = jwt.sign(payload, "RANDOM-TOKEN", { expiresIn: "1h" });
+      res.send({
         status: 1,
-        message: "Admin Login",
-        user: userData,
+        message: "Login Successful",
+        user: payload,
         token,
       });
     } else {
-      return res.send({
-        status: 0,
-        message: "Passwords does not match",
-      });
+      res.send({ status: 0 });
     }
-  }
-  Users.findOne({ email: req.body.email })
-    .then((user) => {
-      bcrypt
-        .compare(req.body.password, user.password)
-        .then((passwordCheck) => {
-          if (!passwordCheck) {
-            // console.log("password ok")
-            return res.send({
-              status: 0,
-              message: "Passwords does not match",
-              error,
-            });
-          }
-          // console.log("password ok")
-          const token = jwt.sign(
-            {
-              userName: user.userName,
-              userId: user._id,
-              userEmail: user.email,
-            },
-            "RANDOM-TOKEN",
-            { expiresIn: "1h" }
+  } else {
+    await Users.findOne({ email: email })
+      .then((user) => {
+        bcrypt
+          .compare(password, user.password)
+          .then((checkPass) => {
+            if (checkPass) {
+              payload = {
+                user_id: user._id,
+                name: user.name,
+                email: user.email,
+              };
+              const token = jwt.sign(payload, "RANDOM-TOKEN", {
+                expiresIn: "1h",
+              });
+              res.send({
+                status: 1,
+                message: "Login Successful",
+                user: user,
+                token,
+              });
+            } else
+              return res.send({
+                status: 0,
+                message: "Passwords does not match",
+              });
+            console.log("user payload", payload);
+          })
+          .catch((err) =>
+            res.send({ status: 0, msg: "Input data invalid", err: err })
           );
-
-          res.send({
-            status: 1,
-            message: "Login Successful",
-            user: user,
-            token,
-          });
-        })
-        .catch((error) => {
-          res.send({ status: 0, message: "Passwords does not match", error });
-        });
-    })
-    .catch((e) => {
-      res.send({ status: 0, message: "Email or Username not found", e });
-    });
+      })
+      .catch((error) => {
+        res.send({ status: 0, message: "Passwords does not match", error });
+      });
+  }
 });
 
 router.get("/get_user/:id", auth, (req, res) => {

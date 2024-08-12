@@ -47,7 +47,10 @@ app.use(
   "/uploads/point",
   express.static(path.join(__dirname, "uploads/point"))
 );
-
+app.use(
+  "/uploads/users",
+  express.static(path.join(__dirname, "uploads/users"))
+);
 //router for admin business
 app.use("/admin", admin);
 app.use("/admin/gacha", gacha);

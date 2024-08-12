@@ -6,7 +6,10 @@ const uploadPoint = require("../../utils/multer/point_multer");
 const path = require("path");
 const auth = require("../../middleware/auth");
 const adminSchemas = require("../../models/admin");
+const CardDeliver = require("../../models/card_delivering");
+const Users = require("../../models/user");
 const deleteFile = require("../../utils/delete");
+const Gacha = require("../../models/gacha");
 
 router.get("/admin_test", (req, res) => {
   res.send("amdin test is sucessful.");
@@ -14,7 +17,7 @@ router.get("/admin_test", (req, res) => {
 
 /* Category Management */
 router.get("/get_category", async (req, res) => {
-  const category = await adminSchemas.Category.find();
+  const category = await adminSchemas.Category.find().sort("display_order");
   if (category) {
     // console.log(category)
     res.send({
@@ -233,23 +236,15 @@ router.get("/get_adminList", auth, (req, res) => {
 
 router.post("/add_admin", auth, (req, res) => {
   const { adminId, name, email, password } = req.body;
-  if (
-    name == (undefined || "") ||
-    email == (undefined || "") ||
-    password == (undefined || "")
-  )
-    res.send({ status: 0, msg: "invalid input data." });
-  console.log("req.body", req.body);
+
   const admin_data = {
     name: name,
     email: email,
     password: password,
   };
-
+  console.log("admin_data", admin_data);
   if (adminId == undefined || adminId == "") {
-    const newAdmin = new adminSchemas.Administrator(admin_data);
-    newAdmin
-      .save()
+    adminSchemas.Administrator.create(admin_data)
       .then(() => res.send({ status: 1 }))
       .catch((err) => res.send({ status: 0, err: err }));
   } else {
@@ -265,5 +260,40 @@ router.delete("/del_admin/:id", auth, (req, res) => {
   adminSchemas.Administrator.deleteOne({ _id: id })
     .then(() => res.send({ status: 1 }))
     .catch((err) => res.send({ status: 0, err: err }));
+});
+
+//get deliver data
+router.get("/get_deliver", async (req, res) => {
+  CardDeliver.find()
+    .then((deliver) => {
+      return res.send({ status: 1, deliverData: deliver });
+    })
+    .catch((err) => res.send({ status: 0, err: err }));
+});
+
+router.post("/set_deliver_status", auth, async (req, res) => {
+  const { id, user_id, status } = req.body;
+  if (status == "delivering") {
+    const deliver = await CardDeliver.findOne({ _id: id });
+    Users.findOne({ _id: user_id })
+      .then((user) => {
+        user.obtain_cards.push(deliver);
+        user
+          .save()
+          .then(() => res.send({ status: 1 }))
+          .catch((err) => res.send({ status: 0, err: err }));
+      })
+      .catch((err) => res.send({ status: 0, msg: "Not Found User" }));
+    await CardDeliver.deleteOne({ _id: id });
+  } else
+    CardDeliver.findOne({ _id: id })
+      .then((deliver) => {
+        deliver.status = "delivering";
+        deliver
+          .save()
+          .then(() => res.send({ status: 1 }))
+          .catch((err) => res.send({ status: 0, err: err }));
+      })
+      .catch((err) => res.send({ status: 0, err: err }));
 });
 module.exports = router;

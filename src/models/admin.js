@@ -4,13 +4,14 @@ const Schema = mongoose.Schema;
 const categorySchema = new Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
+  display_order: { type: Number, required: true, default: 0 },
 });
 //remain prize list
 const prizeSchema = new Schema({
-  name: { type: String, required: true },
-  rarity: { type: Number, required: true },
-  cashback: { type: Number, required: true },
-  img_url: { type: String, required: true },
+  name: { type: String },
+  rarity: { type: Number },
+  cashback: { type: Number },
+  img_url: { type: String },
   status: { type: String, default: "unset" }, //prize status- unset, set,
 });
 

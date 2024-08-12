@@ -53,7 +53,9 @@ router.post("/upload_bulk", auth, (req, res) => {
               res.send({ status: 0, msg: "upload prizes failed.", err: err })
             );
         })
-        .catch((err) => res.send({ status: 0, err: err }));
+        .catch((err) =>
+          res.send({ status: 0, msg: "Not Found Gacha", err: err })
+        );
     })
     .catch((err) =>
       res.send({ status: 0, msg: "Invalid Prizes Data", err: err })
@@ -102,16 +104,18 @@ router.get("/set_release/:id", auth, (req, res) => {
 });
 //unset prize from gacha
 router.post("/unset_prize", auth, (req, res) => {
-  const { gachaId, prizeId } = req.body;
-  console.log("req.body", req.body);
-  console.log("gachaId", gachaId);
+  const { gachaId, prizeId, flag } = req.body;
+
   Gacha.findOne({ _id: gachaId })
     .then((gacha) => {
-      let prize = gacha.remain_prizes;
-      console.log("prize set");
-      prize = prize.filter((data) => data._id != prizeId);
-      console.log("filtered prize-->", prize);
-      gacha.remain_prizes = prize;
+      if (flag === -1) gacha.last_prize = {};
+      else {
+        let prize = gacha.remain_prizes;
+        console.log("prize set");
+        prize = prize.filter((data) => data._id != prizeId);
+        console.log("filtered prize-->", prize);
+        gacha.remain_prizes = prize;
+      }
       gacha
         .save()
         .then(() => {
@@ -134,13 +138,22 @@ router.post("/unset_prize", auth, (req, res) => {
 });
 //set prize to gacha
 router.post("/set_prize", auth, (req, res) => {
-  const { gachaId, prizeId } = req.body;
+  const { isLastPrize, gachaId, prizeId } = req.body;
   Gacha.findOne({ _id: gachaId })
     .then((gacha) => {
       adminSchemas.Prize.findOne({ _id: prizeId }).then(async (prize) => {
         prize.status = "set";
         await prize.save();
-        gacha.remain_prizes.push(prize);
+        if (isLastPrize) {
+          if (gacha.last_prize) {
+            console.log("last prize", gacha.last_prize);
+            await adminSchemas.Prize.updateOne(
+              { _id: gacha.last_prize._id },
+              { status: "unset" }
+            );
+          }
+          gacha.last_prize = prize;
+        } else gacha.remain_prizes.push(prize);
         gacha
           .save()
           .then(() => res.send({ status: 1 }))
@@ -151,6 +164,7 @@ router.post("/set_prize", auth, (req, res) => {
     })
     .catch((err) => res.send({ status: 0, msg: "Not found gacha", err: err }));
 });
+
 router.delete("/:id", async (req, res) => {
   const id = req.params.id;
   Gacha.findOne({ _id: id })
@@ -168,34 +182,47 @@ router.delete("/:id", async (req, res) => {
       res.send({ status: 0, msg: "Delete failed!", error: err });
     });
 });
-
+//handle draw gacha
 router.post("/draw_gacha", auth, async (req, res) => {
   const { gachaId, draw, user } = req.body;
-  console.log("req.user-->", user);
+  if (user.role == "admin")
+    return res.send({ status: 0, msg: "Can't Draw as Admin" });
   const userData = await User.findOne({ _id: user.user_id });
   Gacha.findOne({ _id: gachaId })
     .then((gacha) => {
       const drawPoint = gacha.price * draw;
+      //return if the point is not enough
       if (userData.point_remain < drawPoint)
         return res.send({ status: 0, msg: "point not enough" });
+      //return if the inventory is not enough
+      console.log("prizenum", gacha.remain_prizes.length);
+      if (gacha.remain_prizes.length < draw)
+        return res.send({ status: 0, msg: "Not enough inventory" });
       //gacha draw with droprate
-      const index = Math.floor(Math.random() * gacha.remain_prizes.length);
-      console.log("index", index);
-      const popPrize = gacha.remain_prizes[index]; //poped prize
-      console.log("popPrize", popPrize);
-      gacha.remain_prizes = gacha.remain_prizes.filter(
-        (prize) => prize._id != popPrize._id
-      ); //remove gacha remain_prize list
-      gacha.poped_prizes.push(popPrize); //add popPrize to gacha poped_prize
+      let popPrize = [];
+      for (let i = 0; i < draw; i++) {
+        const index = Math.floor(Math.random() * gacha.remain_prizes.length);
+        // console.log("index", index);
+        popPrize.push(gacha.remain_prizes[index]); //poped prize
+        // console.log("popPrize", popPrize);
+        //remove popPrize from gacha remain_prize list
+        gacha.remain_prizes = gacha.remain_prizes.filter(
+          (prize) => prize._id != popPrize[i]._id
+        );
+        //add popPrize to gacha poped_prize
+        gacha.poped_prizes.push(popPrize);
+      }
       gacha
         .save()
         .then(() => {
           console.log("gacha saved");
-          adminSchemas.Prize.deleteOne({ _id: popPrize._id }) //remove from prizelist
+          adminSchemas.Prize.deleteMany({ _id: popPrize._id }) //remove from prizelist
             .then(() => {
+              //new deliverData
               const newDeliverData = new CardDeliver({
                 user_id: userData._id,
-                gachaId: gacha._id,
+                user_name: userData.name,
+                gacha_name: gacha.name,
                 prizes: popPrize,
                 status: "pending",
               });
@@ -204,17 +231,33 @@ router.post("/draw_gacha", auth, async (req, res) => {
                 userData.point_remain -= drawPoint;
                 userData
                   .save()
-                  .then(() =>
-                    res.send({
-                      status: 1,
-                      msg: "gachaDraw Success.",
-                      prizes: popPrize,
-                    })
-                  )
+                  .then(() => {
+                    //new point log data
+                    const newPointLog = new PointLog({
+                      user_id: userData._id,
+                      point_num: drawPoint,
+                      usage: "Gacha Draw",
+                    });
+                    newPointLog
+                      .save()
+                      .then(() =>
+                        res.send({
+                          status: 1,
+                          msg: "gachaDraw Success.",
+                          prizes: popPrize,
+                        })
+                      )
+                      .catch((err) =>
+                        res.send({
+                          status: 0,
+                          msg: "Point log save failed.",
+                          err: err,
+                        })
+                      );
+                  })
                   .catch((err) =>
                     res.send({ status: 0, msg: "User save failed." })
                   );
-                // PointLog
               });
             })
             .catch((err) => res.send("remove Prizelist failed"));

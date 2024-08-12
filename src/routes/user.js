@@ -7,6 +7,7 @@ const Users = require("../models/user");
 const adminSchemas = require("../models/admin");
 const PointLog = require("../models/point_log");
 const CardDeliver = require("../models/card_delivering");
+const Gacha = require("../models/gacha");
 
 router.post("/register", (req, res) => {
   console.log("user data", req.body);
@@ -143,5 +144,44 @@ router.get("/get_cards/:user_id", auth, (req, res) => {
   Users.findOne({ _id: user_id })
     .then((user) => res.send({ status: 1, cards: user.obtain_cards }))
     .catch((err) => res.send({ status: 0, err: err }));
+});
+
+router.post("/return_prize", auth, (req, res) => {
+  const { deliver_id, prize_id } = req.body;
+  CardDeliver.findOne({ _id: deliver_id }).then((deliver) => {
+    const returnPrize = deliver.prizes.find((prize) => prize._id == prize_id);
+    deliver.prizes.filter((prize) => prize._id != prize_id); //remove ReturnedPrize from Delivering Card List
+    deliver
+      .save()
+      .then(async () => {
+        try {
+          //add ReturnedPrize to Prize list
+          await Prize.create(returnPrize);
+          console.log("prize create success.");
+        } catch (err) {
+          console.log("prize create error.");
+        }
+      })
+      .catch((err) => res.send({ status: 0, msg: "Card return failed." }));
+    //add ReturnedPrize to Gacha/remain_prizes
+    Gacha.findOne({ _id: deliver.gacha_id })
+      .then((gacha) => {
+        const poped_prize = gacha.poped_prizes.find(
+          (prize) => prize._id == prize_id
+        ); //ReturnedPrize have been being in Gacha/poped prize
+        gacha.remain_prizes.push(poped_prize);
+        gacha
+          .save()
+          .then(() => {
+            res.send({ status: 1, err: err });
+          })
+          .catch((err) =>
+            res.send({ status: 0, msg: "Gacha update failed.", err: err })
+          );
+      })
+      .catch((err) =>
+        res.send({ status: 0, msg: "Not found Gacha.", err: err })
+      );
+  });
 });
 module.exports = router;

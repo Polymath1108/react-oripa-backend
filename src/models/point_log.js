@@ -5,6 +5,7 @@ const pointLogSchema = new mongoose.Schema({
   point_num: { type: Number, required: true },
   date: { type: Date, default: Date.now },
   usage: { type: String },
+  ioFlag: { type: Number, require: true }, //flag if point consume or buy; 1: buy, 0: consume
 });
 
 const PointLog = mongoose.model("PointLog", pointLogSchema, "point_log");

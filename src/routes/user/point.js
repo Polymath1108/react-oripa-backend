@@ -18,6 +18,7 @@ router.post("/purchase", auth, async (req, res) => {
         price: price,
         date: Date.now(),
         usage: "Purchase Point",
+        ioFlag: 1,
       });
       newPointLog
         .save()

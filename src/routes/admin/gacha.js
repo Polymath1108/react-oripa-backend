@@ -222,6 +222,7 @@ router.post("/draw_gacha", auth, async (req, res) => {
               const newDeliverData = new CardDeliver({
                 user_id: userData._id,
                 user_name: userData.name,
+                gacha_id: gacha._id,
                 gacha_name: gacha.name,
                 prizes: popPrize,
                 status: "pending",
@@ -237,6 +238,7 @@ router.post("/draw_gacha", auth, async (req, res) => {
                       user_id: userData._id,
                       point_num: drawPoint,
                       usage: "Gacha Draw",
+                      ioFlag: 0,
                     });
                     newPointLog
                       .save()

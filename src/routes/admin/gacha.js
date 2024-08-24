@@ -9,6 +9,7 @@ const adminSchemas = require("../../models/admin");
 const CardDeliver = require("../../models/card_delivering");
 const User = require("../../models/user");
 const PointLog = require("../../models/point_log");
+
 //Gacha add
 router.post("/add", auth, uploadGacha.single("file"), async (req, res) => {
   const { name, price, totalNum, category } = req.body;
@@ -141,26 +142,30 @@ router.post("/set_prize", auth, (req, res) => {
   const { isLastPrize, gachaId, prizeId } = req.body;
   Gacha.findOne({ _id: gachaId })
     .then((gacha) => {
-      adminSchemas.Prize.findOne({ _id: prizeId }).then(async (prize) => {
-        prize.status = "set";
-        await prize.save();
-        if (isLastPrize) {
-          if (gacha.last_prize) {
-            console.log("last prize", gacha.last_prize);
-            await adminSchemas.Prize.updateOne(
-              { _id: gacha.last_prize._id },
-              { status: "unset" }
+      adminSchemas.Prize.findOne({ _id: prizeId })
+        .then(async (prize) => {
+          prize.status = "set";
+          await prize.save();
+          if (isLastPrize) {
+            if (gacha.last_prize) {
+              console.log("last prize", gacha.last_prize);
+              await adminSchemas.Prize.updateOne(
+                { _id: gacha.last_prize._id },
+                { status: "unset" }
+              );
+            }
+            gacha.last_prize = prize;
+          } else gacha.remain_prizes.push(prize);
+          gacha
+            .save()
+            .then(() => res.send({ status: 1 }))
+            .catch((err) =>
+              res.send({ status: 0, msg: "gacha save failed.", err: err })
             );
-          }
-          gacha.last_prize = prize;
-        } else gacha.remain_prizes.push(prize);
-        gacha
-          .save()
-          .then(() => res.send({ status: 1 }))
-          .catch((err) =>
-            res.send({ status: 0, msg: "gacha save failed.", err: err })
-          );
-      });
+        })
+        .catch((err) =>
+          res.send({ status: 0, msg: "Not found Prize", err: err })
+        );
     })
     .catch((err) => res.send({ status: 0, msg: "Not found gacha", err: err }));
 });

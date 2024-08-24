@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const auth = require("../middleware/auth");
-const Users = require("../models/user");
-const adminSchemas = require("../models/admin");
-const PointLog = require("../models/point_log");
-const CardDeliver = require("../models/card_delivering");
-const Gacha = require("../models/gacha");
+const auth = require("../../middleware/auth");
+const Users = require("../../models/user");
+const adminSchemas = require("../../models/admin");
+const PointLog = require("../../models/point_log");
+const CardDeliver = require("../../models/card_delivering");
+const Gacha = require("../../models/gacha");
 
 router.post("/register", async (req, res) => {
   console.log("user data", req.body);

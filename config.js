@@ -17,8 +17,12 @@ const config = {
     },
     admin_authority: {
       admin: "admin", //authority for managing administrator
-      users: "users" //authority for managing users
-      
+      users: "users", //authority for managing users
+      category: "category",  //authority for managing category
+      prize: "prize",  //authority for managing prize
+      gacha: "gacha",  //authority for managing gacha
+      deliver: "deliver",  //authority for managing deliver
+      notion: "notion",  //authority for managing notion
     }
   };
   

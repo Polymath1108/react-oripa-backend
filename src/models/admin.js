@@ -25,8 +25,7 @@ const AdminSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
-  read_authority: [],
-  write_authority: [],
+  authority: {type: Object},  //1: read, 2: write, 3: delete
 });
 
 const Category = mongoose.model("Category", categorySchema, "admin_category");

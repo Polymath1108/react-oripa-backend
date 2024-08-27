@@ -10,6 +10,7 @@ const CardDeliver = require("../../models/card_delivering");
 const Users = require("../../models/user");
 const deleteFile = require("../../utils/delete");
 const Gacha = require("../../models/gacha");
+const config = require('../../../config')
 
 router.get("/admin_test", (req, res) => {
   res.send("amdin test is sucessful.");
@@ -81,7 +82,7 @@ router.post("/prize_upload", uploadPrize.single("file"), async (req, res) => {
     cashback: cashBack,
   };
   if (req.file == null || req.file == undefined) {
-    res.send({ status: 2, msg: "file is not selected." });
+    return res.send({ status: 2, msg: "file is not selected." });
   }
   prizeData.img_url = `/uploads/prize/${req.file.filename}`;
   console.log("req.file", req.file);
@@ -244,6 +245,13 @@ router.post("/add_admin", auth, (req, res) => {
     email: email,
     password: password,
   };
+  authority = {}
+  const admin_authority = config.admin_authority;
+  for (key in admin_authority) {
+    let item = admin_authority[key];
+    authority[item] = 1;  //set read authority by default
+  }
+  admin_data.authority = authority;
   console.log("admin_data", admin_data);
   if (adminId == undefined || adminId == "") {
     adminSchemas.Administrator.create(admin_data)
@@ -264,8 +272,17 @@ router.delete("/del_admin/:id", auth, (req, res) => {
     .catch((err) => res.send({ status: 0, err: err }));
 });
 
+//change admin authority
+router.post("/chang_auth", auth, (req, res) => {
+  const {adminId, authority} = req.body;
+  adminSchemas.Administrator.findOne({_id: adminId}).then((admin) => {
+      admin.authority = authority;
+      admin.save().then(() => res.send({status: 1})).catch(() => res.send({status: 0}))
+  }).catch((err) => res.send({status: 0, msg: "Not Found Admin", err: err}))
+})
+
 //get deliver data
-router.get("/get_deliver", async (req, res) => {
+router.get("/get_deliver", auth,  async (req, res) => {
   CardDeliver.find()
     .then((deliver) => {
       return res.send({ status: 1, deliverData: deliver });

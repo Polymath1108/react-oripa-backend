@@ -14,7 +14,7 @@ const PointLog = require("../../models/point_log");
 router.post("/add", auth, uploadGacha.single("file"), async (req, res) => {
   const { name, price, totalNum, category } = req.body;
   if (req.file == null || req.file == undefined) {
-    res.return({ status: 2, msg: "file is not selected." });
+    res.send({ status: 2, msg: "file is not selected." });
   }
   const newGacha = new Gacha({
     name: name,

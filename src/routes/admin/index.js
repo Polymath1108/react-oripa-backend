@@ -80,8 +80,10 @@ router.post("/prize_upload", uploadPrize.single("file"), async (req, res) => {
     rarity: rarity,
     cashback: cashBack,
   };
-  if (req.file != undefined)
-    prizeData.img_url = `/uploads/prize/${req.file.filename}`;
+  if (req.file == null || req.file == undefined) {
+    res.send({ status: 2, msg: "file is not selected." });
+  }
+  prizeData.img_url = `/uploads/prize/${req.file.filename}`;
   console.log("req.file", req.file);
 
   if (id != "") {
@@ -126,8 +128,8 @@ router.delete("/del_prize/:id", auth, async (req, res) => {
   const id = req.params.id;
   adminSchemas.Prize.findOne({ _id: id })
     .then(async (prize) => {
-      // if (prize.status == "set")
-      //   return res.send({ status: 0, msg: "Can't delete set prize" });
+      if (prize.status == "set")
+        return res.send({ status: 0, msg: "Can't delete setted prize" });
       const filename = prize.img_url;
       const filePath = path.join("./", filename);
       console.log("filepath------->", filePath);
@@ -141,7 +143,7 @@ router.delete("/del_prize/:id", auth, async (req, res) => {
       }
     })
     .catch((err) =>
-      res.send({ status: 0, msg: "prize finding error", err: err })
+      res.send({ status: 0, msg: "prize find error", err: err })
     );
 });
 

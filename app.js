@@ -10,6 +10,7 @@ const admin = require("./src/routes/admin");
 const user = require("./src/routes/user");
 const gacha = require("./src/routes/admin/gacha");
 const point = require("./src/routes/user/point");
+const payment = require("./src/routes/payment")
 // app.use((req, res, next) => {
 //   res.setHeader("Access-Control-Allow-Origin", "*");
 //   ``;
@@ -51,6 +52,7 @@ app.use(
   "/uploads/users",
   express.static(path.join(__dirname, "uploads/users"))
 );
+
 //router for admin business
 app.use("/admin", admin);
 app.use("/admin/gacha", gacha);
@@ -58,6 +60,8 @@ app.use("/admin/gacha", gacha);
 app.use("/user", user);
 app.use("/user/point", point);
 
+//router for payment
+app.use("/payment", payment);
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

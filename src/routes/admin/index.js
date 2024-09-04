@@ -173,7 +173,7 @@ router.post(
     if (req.file?.filename != undefined)
       pointData.img_url = `/uploads/point/${req.file.filename}`;
 
-    if (id != "") {
+    if (id != "" && id != undefined) {
       console.log("update id----->", id);
       adminSchemas.Point.findOne({ _id: id })
         .then(async (point) => {
@@ -271,6 +271,7 @@ router.delete("/del_admin/:id", auth, (req, res) => {
     .then(() => res.send({ status: 1 }))
     .catch((err) => res.send({ status: 0, err: err }));
 });
+
 
 //change admin authority
 router.post("/chang_auth", auth, (req, res) => {

@@ -215,7 +215,7 @@ router.post("/draw_gacha", auth, async (req, res) => {
           (prize) => prize._id != popPrize[i]._id
         );
         //add popPrize to gacha poped_prize
-        gacha.poped_prizes.push(popPrize);
+        gacha.poped_prizes.push(gacha.remain_prizes[index]);
       }
       gacha
         .save()

@@ -11,6 +11,7 @@ const user = require("./src/routes/user");
 const gacha = require("./src/routes/admin/gacha");
 const point = require("./src/routes/user/point");
 const payment = require("./src/routes/payment")
+const mail = require("./src/routes/mail")
 // app.use((req, res, next) => {
 //   res.setHeader("Access-Control-Allow-Origin", "*");
 //   ``;
@@ -59,9 +60,12 @@ app.use("/admin/gacha", gacha);
 //router for user task
 app.use("/user", user);
 app.use("/user/point", point);
-
+app.use("/mail", mail);
 //router for payment
 app.use("/payment", payment);
+app.get("/status", ( req , res) => {
+  res.send({msg: "Server is running."});
+});
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

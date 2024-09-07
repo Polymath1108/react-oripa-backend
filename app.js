@@ -63,8 +63,12 @@ app.use("/user/point", point);
 app.use("/mail", mail);
 //router for payment
 app.use("/payment", payment);
+
+app.get('/' , (req, res) => {
+  res.send('heel0 word from the server app js')
+});
 app.get("/status", ( req , res) => {
-  res.send({msg: "Server is running."});
+  res.send("Server is running.");
 });
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
